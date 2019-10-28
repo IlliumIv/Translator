@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UIAddon>
+    <Name>Translator</Name>
+    <AutoStart>true</AutoStart>
+    <ScriptFileRefs>
+        <!--
+        <Item href="Scripts/ScriptAddonBase.lua"/>
+        <Item href="Scripts/ScriptAdvancedToString.lua"/>
+        -->
+        <Item href="Translator.lua"/>
+    </ScriptFileRefs>
+<!--
+    <MainFormId>Main</MainFormId>
+    <Forms>
+        <Item>
+            <Id>Main</Id>
+            <Form href="Textures/MainForm.(WidgetForm).xdb#xpointer(/WidgetForm)"/>
+        </Item>
+    </Forms>
+-->
+    <author>Illium</author>
+    <localizedNameFileRef href="Name.txt"/>
+    <localizedDescFileRef href="Desc.txt"/>
+</UIAddon>
