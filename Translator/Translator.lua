@@ -1,5 +1,5 @@
 function MessagesReceiver(params)
-    LogInfo(userMods.FromWString(params.sender) .. ': ' .. userMods.FromWString(params.msg))
+    LogInfo('(' .. userMods.FromWString(params.sender).. '):(' .. userMods.FromWString(params.msg) .. ') TranslatorEndMessage')
 end
 
 --------------------------------------------------------------------------------

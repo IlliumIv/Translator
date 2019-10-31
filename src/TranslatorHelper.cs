@@ -4,8 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using GoogleTranslateFreeApi;
 
 namespace TranslatorHelper
 {
@@ -16,8 +18,15 @@ namespace TranslatorHelper
         static readonly Version version = Assembly.GetExecutingAssembly().GetName().Version;
         static DateTime buildDate;
 
-        const string logs = @"..\TranslatorHelper\MockLog.txt";
+        const string MockLog = @"..\TranslatorHelper\MockLog.txt";
+        const string ErrorLog = @"Error.log";
         static long position = GetLastReadPosition();
+
+        // Translator: (31.10.2019 17:46:47) (NickName):(XWXPIDRNSL) TranslatorEndMessage
+        // Translator\:.*TranslatorEndMessage
+        static readonly Regex lineCatch = new Regex(@"Translator\:.*TranslatorEndMessage");
+        // \((.*?)\)
+        static readonly Regex paramCatch = new Regex(@"\((.*?)\)");
 
         static void Main()
         {
@@ -30,7 +39,7 @@ namespace TranslatorHelper
             MockCreateLog();
             MockWriterAsync();
 
-            var fileInfo = new FileInfo(logs);
+            var fileInfo = new FileInfo(MockLog);
 #pragma warning disable IDE0067 // Dispose objects before losing scope
             var logsWatcher = new FileSystemWatcher(fileInfo.DirectoryName,
                                                     fileInfo.Name)
@@ -51,41 +60,70 @@ namespace TranslatorHelper
 
         static void MessagesReceiver(object sender, FileSystemEventArgs args)
         {
-            try
+            using (StreamReader sr = new StreamReader(MockLog))
             {
-                using (StreamReader sr = new StreamReader(logs))
+                using (var file = File.Open(MockLog, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    using (var file = File.Open(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    if (position >= file.Length)
+                        return;
+
+                    file.Position = position;
+
+                    using (var reader = new StreamReader(file))
                     {
-                        if (position >= file.Length)
-                            return;
+                        string line;
 
-                        file.Position = position;
-
-                        using (var reader = new StreamReader(file))
+                        while ((line = reader.ReadLine()) != null)
                         {
-                            string line;
-                            while ((line = reader.ReadLine()) != null)
-                            {
-                                Console.WriteLine(Translate(line).Text);
-                            }
-
-                            position = file.Position;
+                            Match match = lineCatch.Match(line);
+                            if (match.Success)
+                                TranslateAsync(match.Value);
                         }
+
+                        position = file.Position;
                     }
                 }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine("The file could not be read:");
-                Console.WriteLine(e.Message);
-            }
         }
 
-        private static Message Translate(string line)
+        private static async void TranslateAsync(string line)
         {
-            Message msg = new Message(DateTime.Now, "Sender", line);
-            return msg;
+            var translator = new GoogleTranslator();
+
+            Language from = Language.Auto;
+            Language to = Language.Russian;
+
+            MatchCollection matches = paramCatch.Matches(line);
+
+            Message msg = new Message(matches[0].Value, matches[1].Value, matches[2].Value);
+
+            bool success = false;
+            int retry = 0;
+
+            while (!success && retry < 3)
+            {
+                try
+                {
+                    TranslationResult result = await translator.TranslateLiteAsync(msg.Text, from, to);
+                    msg.Text = result.MergedTranslation;
+                    Console.WriteLine($"{msg.TimeStamp}[{msg.Sender}]:{msg.Text}");
+                    success = true;
+                }
+                catch (Exception e)
+                {
+                    if (!File.Exists(ErrorLog))
+                        using (FileStream file = File.Create(MockLog))
+                        {
+                            // Create file if not exist
+                        }
+                    File.AppendAllText(ErrorLog, $"{e.Message}\n" +
+                                                 $"{e.StackTrace}");
+                    retry++;
+                }
+            }
+
+            if (!success)
+                Console.WriteLine($"Could not translate message in {retry} attempts");
         }
 
         private static long GetLastReadPosition()
@@ -101,18 +139,18 @@ namespace TranslatorHelper
         {
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnExit);
 
-            using (FileStream file = File.Create(logs))
+            using (FileStream file = File.Create(MockLog))
             {
                 // Just create file
             }
 
-            Console.WriteLine($"Created MockLog here: {new FileInfo(logs).FullName}");
+            Console.WriteLine($"Created MockLog here: {new FileInfo(MockLog).FullName}");
             Console.WriteLine();
         }
 
         private static void OnExit(object sender, EventArgs args)
         {
-            File.Delete(logs);
+            File.Delete(MockLog);
         }
 
         static async void MockWriterAsync()
@@ -126,12 +164,12 @@ namespace TranslatorHelper
             {
                 string[] str = new string[]
                 {
-                    $"Translator: ({DateTime.Now}) TranslatorSender:((NickName)), TranslatorMessage:(({MockRandomString(10)}))"
+                    $"Translator: ({DateTime.Now}) (NickName):({MockRandomString(10)}) TranslatorEndMessage"
                 };
 
-                // Console.WriteLine($"Writing string: {str.First<string>()}");
-                File.AppendAllLines(logs, str);
-                Thread.Sleep(new Random().Next(10000));
+                File.AppendAllLines(MockLog, str);
+                // Thread.Sleep(new Random().Next(10000));
+                Thread.Sleep(10000);
             }
         }
 

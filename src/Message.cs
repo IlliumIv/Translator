@@ -8,11 +8,11 @@ namespace TranslatorHelper
 {
     public class Message
     {
-        public DateTime TimeStamp { get; private set; }
+        public string TimeStamp { get; private set; }
         public string Sender { get; private set; }
-        public string Text { get; private set; }
+        public string Text { get; set; }
 
-        public Message(DateTime time, string sender, string text)
+        public Message(string time, string sender, string text)
         {
             TimeStamp = time;
             Sender = sender;
