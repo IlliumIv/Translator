@@ -1,3 +1,6 @@
+-- Copyright 2019 IlliumIv
+-- Licensed under the Apache License, Version 2.0
+
 -- messages[1]={["time"]="00:00:00",["nickname"]="Illium",["translatedMessage"]="Some string whith message"}
 Global("messages",{})
 Global("messagesCache",{})
