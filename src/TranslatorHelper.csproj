@@ -69,7 +69,6 @@
     <ProjectReference Include="..\GoogleTranslateFreeApi\GoogleTranslateFreeApi\GoogleTranslateFreeApi.csproj">
       <Project>{121a4310-40f5-44e4-8eb2-edab78a0a91c}</Project>
       <Name>GoogleTranslateFreeApi</Name>
-      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

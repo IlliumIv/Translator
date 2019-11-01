@@ -20,7 +20,11 @@ namespace TranslatorHelper
 
         const string MockLog = @"..\TranslatorHelper\MockLog.txt";
         const string ErrorLog = @"Error.log";
+        const string TranslatedMessagesDir = @"C:\ProgramData\AOTranslator";
+        const string TranslatedMessagesLua = @"C:\ProgramData\AOTranslator\messages.lua";
+
         static long position = GetLastReadPosition();
+        static long messagesCount = 1;
 
         // Translator: (31.10.2019 17:46:47) (NickName):(XWXPIDRNSL) TranslatorEndMessage
         // Translator\:.*TranslatorEndMessage
@@ -56,6 +60,14 @@ namespace TranslatorHelper
         private static void OnLoad()
         {
             buildDate = new DateTime(2000, 1, 1).AddDays(version.Build).AddSeconds(version.Revision * 2);
+
+            if (!Directory.Exists(TranslatedMessagesDir))
+                Directory.CreateDirectory(TranslatedMessagesDir);
+
+            using (FileStream file = File.Create(TranslatedMessagesLua))
+            {
+                // Just create file
+            }
         }
 
         static void MessagesReceiver(object sender, FileSystemEventArgs args)
@@ -77,7 +89,7 @@ namespace TranslatorHelper
                         {
                             Match match = lineCatch.Match(line);
                             if (match.Success)
-                                TranslateAsync(match.Value);
+                                TranslateAsync(match.Value, messagesCount++);
                         }
 
                         position = file.Position;
@@ -86,7 +98,7 @@ namespace TranslatorHelper
             }
         }
 
-        private static async void TranslateAsync(string line)
+        private static async void TranslateAsync(string line, long msgCount)
         {
             var translator = new GoogleTranslator();
 
@@ -106,7 +118,15 @@ namespace TranslatorHelper
                 {
                     TranslationResult result = await translator.TranslateLiteAsync(msg.Text, from, to);
                     msg.Text = result.MergedTranslation;
+
+                    // messages[1]={["time"]="00:00:00",["nickname"]="Illium",["translatedMessage"]="Some string whith message"}
+                    File.AppendAllText(TranslatedMessagesLua, $"messages[{msgCount}]=" + "{" +
+                                                              $"[\"time\"]=\"{msg.TimeStamp}\"" +
+                                                              $"[\"nickname\"]=\"{msg.Sender}\"" +
+                                                              $"[\"translatedMessage\"]=\"{msg.Text}\"\n");
+
                     Console.WriteLine($"{msg.TimeStamp}[{msg.Sender}]:{msg.Text}");
+
                     success = true;
                 }
                 catch (Exception e)

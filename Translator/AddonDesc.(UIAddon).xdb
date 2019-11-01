@@ -3,10 +3,7 @@
     <Name>Translator</Name>
     <AutoStart>true</AutoStart>
     <ScriptFileRefs>
-        <!--
-        <Item href="Scripts/ScriptAddonBase.lua"/>
-        <Item href="Scripts/ScriptAdvancedToString.lua"/>
-        -->
+        <Item href="Scripts/isEqual.lua"/>
         <Item href="Translator.lua"/>
     </ScriptFileRefs>
 <!--
