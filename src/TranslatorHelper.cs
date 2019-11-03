@@ -47,15 +47,13 @@ namespace TranslatorHelper
             MockWriterAsync();
 
             var fileInfo = new FileInfo(MockLog);
-#pragma warning disable IDE0067 // Dispose objects before losing scope
-            var logsWatcher = new FileSystemWatcher(fileInfo.DirectoryName,
-                                                    fileInfo.Name)
+            using (var logsWatcher = new FileSystemWatcher(fileInfo.DirectoryName,
+                                                           fileInfo.Name))
             {
-                NotifyFilter = NotifyFilters.LastWrite
-            };
-#pragma warning restore IDE0067 // Dispose objects before losing scope
-            logsWatcher.Changed += new FileSystemEventHandler(MessagesReceiver);
-            logsWatcher.EnableRaisingEvents = true;
+                logsWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                logsWatcher.Changed += new FileSystemEventHandler(MessagesReceiver);
+                logsWatcher.EnableRaisingEvents = true;
+            }
 
             Console.ReadLine();
         }
@@ -119,14 +117,21 @@ namespace TranslatorHelper
             {
                 try
                 {
-                    TranslationResult result = await translator.TranslateLiteAsync(msg.Text, from, to);
+                    TranslationResult result = await translator.TranslateLiteAsync(msg.Text, from, to).ConfigureAwait(true);
                     msg.Text = result.MergedTranslation;
+                    msg.Status = MessageStatus.Translated;
 
-                    // messages[1]={["time"]="00:00:00",["nickname"]="Illium",["translatedMessage"]="Some string whith message"}
+                    /*
+                    messages[1]={["Status"]="Translated",
+                                 ["TimeStamp"]="00:00:00",
+                                 ["Sender"]="Illium",
+                                 ["Text"]="Some string whith message"}
+                    */
                     File.AppendAllText(TranslatedMessagesLua, $"messages[{msgCount}]=" + "{" +
-                                                              $"[\"time\"]=\"{msg.TimeStamp}\"" +
-                                                              $"[\"nickname\"]=\"{msg.Sender}\"" +
-                                                              $"[\"translatedMessage\"]=\"{msg.Text}\"\n");
+                                                              $"[\"Status\"]=\"{msg.Status}\"" +
+                                                              $"[\"TimeStamp\"]=\"{msg.TimeStamp}\"" +
+                                                              $"[\"Sender\"]=\"{msg.Sender}\"" +
+                                                              $"[\"Text\"]=\"{msg.Text}\"\n");
 
                     Console.WriteLine($"{msg.TimeStamp}[{msg.Sender}]:{msg.Text}");
 
@@ -156,7 +161,7 @@ namespace TranslatorHelper
 
         #region Mock
         static readonly Random _rng = new Random();
-        static readonly string _chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string _chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         static void MockCreateLog()
         {
@@ -178,7 +183,7 @@ namespace TranslatorHelper
 
         static async void MockWriterAsync()
         {
-            await Task.Run(() => MockWritingRandomLines());
+            await Task.Run(() => MockWritingRandomLines()).ConfigureAwait(false);
         }
 
         static void MockWritingRandomLines()

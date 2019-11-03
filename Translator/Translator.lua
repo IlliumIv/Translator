@@ -1,7 +1,11 @@
 -- Copyright 2019 IlliumIv
 -- Licensed under the Apache License, Version 2.0
 
--- messages[1]={["time"]="00:00:00",["nickname"]="Illium",["translatedMessage"]="Some string whith message"}
+-- messages[1]={["Status"]="Translated",
+--				["TimeStamp"]="00:00:00",
+--				["Sender"]="Illium",
+--				["Text"]="Some string whith message"}
+
 Global("messages",{})
 Global("messagesCache",{})
 
@@ -17,20 +21,22 @@ function OnSecondTimer()
     messages={}
     local filename = "C:\\ProgramData\\AOTranslator\\messages.lua"
     dofile(filename)
-    if not isEqual(messages,messagesCache) then
+	if not #message = #messagesCache then
+    -- if not isEqual(messages,messagesCache) then
         DrawMessage()
     end
 end
 
 function DrawMessage()
-    for k,v in pairs(messages) do
-        if k>pos then
+    for key, value in pairs(messages) do
+        if (key > pos and value["Status"] = "Translated") then
             -- some drawing code
-            LogInfo('NewTranslatedMessage' .. v[nickname] ..
-                                       ':' .. v["translatedMessage"])
+            LogInfo('NewTranslatedMessage' .. value["Sender"] ..
+                                       ':' .. value["Text"])
             -- if success drawing then
-            pos = k
-            table.insert(messagesCache, k, v)
+            pos = key
+			value["Status"] = "Displayed"
+            table.insert(messagesCache, key, value)
         end
     end
 end
