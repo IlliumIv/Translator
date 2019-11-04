@@ -4,6 +4,16 @@
  - Аддона, выполняющего логирование сообщений и отображение переведённых сообщений
  - Утилиты, читающей лог и работающей с Translator API
 
+### Установка
+ - Загрузить Translator.pak и TranslatorHelper.7z [последней версии](https://github.com/IlliumIv/Translator/releases)
+ - Поместить Translator.pak в директорию аддонов (data\Mods\Addons из корневого каталога с Аллодами)
+ - Распаковать TranslatorHelper.7z в любое удобное место
+
+### Использование
+ - Запустить TranslatorHelper.exe
+ - Запустить Аллоды Онлайн
+ - Включить логирование ошибок пользовательских аддонов (8.0+)
+
 Стадия прототипа. Реализовано:
  - Логирование сообщений в чат
  - Перевод сообщений с использованием GoogleTranslatorFreeApi (моё почтение [Grizley56](https://github.com/Grizley56/GoogleTranslateFreeApi))
