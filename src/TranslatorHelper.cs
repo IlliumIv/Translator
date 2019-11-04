@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using GoogleTranslateFreeApi;
+using TranslatorHelper.Message;
 
 namespace TranslatorHelper
 {
@@ -22,18 +23,24 @@ namespace TranslatorHelper
         static DateTime buildDate;
 
         const string MockLog = @"..\TranslatorHelper\MockLog.txt";
+        const bool Debug = false;
+
+        static string ModsLog;
+        private static readonly Encoding srcEncoding = Encoding.GetEncoding(1251);
+
         const string ErrorLog = @"Error.log";
         const string TranslatedMessagesDir = @"C:\ProgramData\AOTranslator";
         const string TranslatedMessagesLua = @"C:\ProgramData\AOTranslator\messages.lua";
 
-        static long position = GetLastReadPosition();
+
+        static long position;
         static long messagesCount = 1;
 
-        // Translator: (31.10.2019 17:46:47) (NickName):(XWXPIDRNSL) TranslatorEndMessage
+        // Info: addon Translator: {08:25:39} {2} {Illium}:{Some message} TranslatorEndMessage
         // Translator\:.*TranslatorEndMessage
         static readonly Regex lineCatch = new Regex(@"Translator\:.*TranslatorEndMessage");
-        // \((.*?)\)
-        static readonly Regex paramCatch = new Regex(@"\((.*?)\)");
+        // \{(.*?)\}
+        static readonly Regex paramCatch = new Regex(@"\{(.*?)\}");
 
         static void Main()
         {
@@ -43,17 +50,22 @@ namespace TranslatorHelper
             Console.WriteLine($"Last Updated: {buildDate}");
             Console.WriteLine();
 
-            MockCreateLog();
-            MockWriterAsync();
+            AOgameSearcher();
+            position = GetEndOfFilePosition(ModsLog);
 
-            var fileInfo = new FileInfo(MockLog);
-            using (var logsWatcher = new FileSystemWatcher(fileInfo.DirectoryName,
-                                                           fileInfo.Name))
-            {
-                logsWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                logsWatcher.Changed += new FileSystemEventHandler(MessagesReceiver);
-                logsWatcher.EnableRaisingEvents = true;
-            }
+            // MockCreateLog();
+            // MockWriterAsync();
+
+
+            var fileInfo = new FileInfo(ModsLog);
+
+#pragma warning disable CA2000 // Dispose objects before losing scope
+            var logsWatcher = new FileSystemWatcher(fileInfo.DirectoryName, fileInfo.Name);
+#pragma warning restore CA2000 // Dispose objects before losing scope
+
+            logsWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            logsWatcher.Changed += new FileSystemEventHandler(MessagesReceiver);
+            logsWatcher.EnableRaisingEvents = true;
 
             Console.ReadLine();
         }
@@ -71,31 +83,62 @@ namespace TranslatorHelper
             }
         }
 
+        private static void AOgameSearcher()
+        {
+            Console.WriteLine("Starting AOgame searcher...");
+            Process[] processes = Process.GetProcessesByName("AOgame");
+            while (processes.Length == 0)
+            {
+                processes = Process.GetProcessesByName("AOgame");
+                Thread.Sleep(10000);
+            }
+
+            var path = processes.First<Process>().MainModule.FileName;
+            var fileInfo = new FileInfo(path);
+            path = fileInfo.Directory.Parent.FullName;
+            ModsLog = Path.Combine(path, @"Personal\Logs\mods.txt");
+            Console.WriteLine($"AOgame found! LogFile here: {ModsLog}");
+            Console.WriteLine();
+        }
+
         static void MessagesReceiver(object sender, FileSystemEventArgs args)
         {
-            using (StreamReader sr = new StreamReader(MockLog))
+            try
             {
-                using (var file = File.Open(MockLog, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (StreamReader sr = new StreamReader(ModsLog, encoding: srcEncoding))
                 {
-                    if (position >= file.Length)
-                        return;
-
-                    file.Position = position;
-
-                    using (var reader = new StreamReader(file))
+                    using (var file = File.Open(ModsLog, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
-                        string line;
+                        if (position >= file.Length)
+                            return;
 
-                        while ((line = reader.ReadLine()) != null)
+                        file.Position = position;
+
+                        using (var reader = new StreamReader(file, encoding: srcEncoding))
                         {
-                            Match match = lineCatch.Match(line);
-                            if (match.Success)
-                                TranslateAsync(match.Value, messagesCount++);
-                        }
+                            string line;
 
-                        position = file.Position;
+                            while ((line = reader.ReadLine()) != null)
+                            {
+                                Match match = lineCatch.Match(line);
+                                if (match.Success)
+                                    TranslateAsync(match.Value, messagesCount++);
+                            }
+
+                            position = file.Position;
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                if (!File.Exists(ErrorLog))
+                    using (FileStream file = File.Create(ErrorLog))
+                    {
+                        // Create file if not exist
+                    }
+                File.AppendAllText(ErrorLog, DateTime.Now + $"{e.Message}\n" +
+                                             $"{e.StackTrace}\n");
             }
         }
 
@@ -108,7 +151,46 @@ namespace TranslatorHelper
 
             MatchCollection matches = paramCatch.Matches(line);
 
-            Message msg = new Message(matches[0].Value, matches[1].Value, matches[2].Value);
+            if (!int.TryParse(StringHelper.Replacer.Clean(matches[1].Value), out int parsedChatType))
+                parsedChatType = 0;
+
+            ChatType chatType = ChatType.LogColorYellow;
+
+            bool knownMesType = true;
+
+            if (Enum.IsDefined(typeof(ChatType), parsedChatType))
+                chatType = (ChatType)parsedChatType;
+            else
+                knownMesType = false;
+
+            IMessage msg = new IMessage(matches[0].Value,
+                                      chatType,
+                                      matches[2].Value,
+                                      matches[3].Value);
+
+
+            string newMessage = $"{msg.TimeStamp} [{msg.Sender}]: \"{msg.Text}\"";
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine($"<< {newMessage}");
+            Console.ResetColor();
+
+            if (!knownMesType)
+            {
+                string unknownMesType = $"Finded unexpected type of message: {parsedChatType}";
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"<< {unknownMesType}");
+                Console.ResetColor();
+
+                if (!File.Exists(ErrorLog))
+                    using (FileStream file = File.Create(ErrorLog))
+                    {
+                        // Create file if not exist
+                    }
+                File.AppendAllText(ErrorLog, DateTime.Now +  $" {unknownMesType}\n   \"{newMessage}\"\n\n");
+            }
+
 
             bool success = false;
             int retry = 0;
@@ -117,46 +199,74 @@ namespace TranslatorHelper
             {
                 try
                 {
-                    TranslationResult result = await translator.TranslateLiteAsync(msg.Text, from, to).ConfigureAwait(true);
-                    msg.Text = result.MergedTranslation;
-                    msg.Status = MessageStatus.Translated;
-
-                    /*
-                    messages[1]={["Status"]="Translated",
-                                 ["TimeStamp"]="00:00:00",
-                                 ["Sender"]="Illium",
-                                 ["Text"]="Some string whith message"}
-                    */
-                    File.AppendAllText(TranslatedMessagesLua, $"messages[{msgCount}]=" + "{" +
-                                                              $"[\"Status\"]=\"{msg.Status}\"" +
-                                                              $"[\"TimeStamp\"]=\"{msg.TimeStamp}\"" +
-                                                              $"[\"Sender\"]=\"{msg.Sender}\"" +
-                                                              $"[\"Text\"]=\"{msg.Text}\"\n");
-
-                    Console.WriteLine($"{msg.TimeStamp}[{msg.Sender}]:{msg.Text}");
+                    if (!Debug)
+                    {
+                        if (!(msg.Text.Length <= 2) & !(msg.ChatType == ChatType.LogColorYellow))
+                        {
+                            TranslationResult result = await translator.TranslateLiteAsync(msg.Text, from, to).ConfigureAwait(true);
+                            msg.Text = result.MergedTranslation;
+                        }
+                    }
 
                     success = true;
                 }
                 catch (Exception e)
                 {
                     if (!File.Exists(ErrorLog))
-                        using (FileStream file = File.Create(MockLog))
+                        using (FileStream file = File.Create(ErrorLog))
                         {
                             // Create file if not exist
                         }
-                    File.AppendAllText(ErrorLog, $"{e.Message}\n" +
-                                                 $"{e.StackTrace}");
+                    File.AppendAllText(ErrorLog, DateTime.Now + $"{e.Message}\n" +
+                                                 $"{e.StackTrace}\n");
                     retry++;
                 }
             }
 
             if (!success)
                 Console.WriteLine($"Could not translate message in {retry} attempts");
+
+            MessagesSender(msg, msgCount);
         }
 
-        private static long GetLastReadPosition()
+        private static void MessagesSender(IMessage message, long count)
         {
-            return 0;
+            /*
+                                                        messages[1]={
+                                                        ["ChatType"]="LogColorYellow",
+                                                        ["TimeStamp"]="08:55:12",
+                                                        ["Sender"]="Illium",
+                                                        ["Text"]="Message!"}
+            */
+            File.AppendAllText(TranslatedMessagesLua, $"messages[{count}]=" + "{" +
+                                                      $"[\"ChatType\"]=\"{message.ChatType}\"," +
+                                                      $"[\"TimeStamp\"]=\"{message.TimeStamp}\"," +
+                                                      $"[\"Sender\"]=\"{message.Sender}\"," +
+                                                      $"[\"Text\"]=\"{message.Text}\"" + "}\n", srcEncoding);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($">> {message.TimeStamp} [{message.Sender}]: \"{message.Text}\"");
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+
+        private static long GetEndOfFilePosition(string path)
+        {
+            long pos = 0;
+
+            if (File.Exists(path))
+
+                using (StreamReader sr = new StreamReader(path, encoding: srcEncoding))
+                {
+                    using (var file = File.Open(ModsLog, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        if (position >= file.Length)
+                            return pos;
+
+                        return file.Length;
+                    }
+                }
+            return pos;
         }
 
         #region Mock
@@ -190,14 +300,15 @@ namespace TranslatorHelper
         {
             while (true)
             {
+                int randomType = new Random().Next(Enum.GetValues(typeof(ChatType)).Length);
+
                 string[] str = new string[]
                 {
-                    $"Translator: ({DateTime.Now}) (NickName):({MockRandomString(10)}) TranslatorEndMessage"
+                    $"Translator: ({DateTime.Now.TimeOfDay}) ({randomType}) (NickName):({MockRandomString(10)}) TranslatorEndMessage"
                 };
 
                 File.AppendAllLines(MockLog, str);
-                // Thread.Sleep(new Random().Next(10000));
-                Thread.Sleep(10000);
+                Thread.Sleep(new Random().Next(10000));
             }
         }
 

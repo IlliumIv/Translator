@@ -1,45 +1,69 @@
 -- Copyright 2019 IlliumIv
 -- Licensed under the Apache License, Version 2.0
 
--- messages[1]={["Status"]="Translated",
---				["TimeStamp"]="00:00:00",
---				["Sender"]="Illium",
---				["Text"]="Some string whith message"}
+--[[
+messages[1]={["Status"]="Translated",
+			["TimeStamp"]="00:00:00",
+			["Sender"]="Illium",
+			["Text"]="Some string whith message"}
+--]]
 
 Global("messages",{})
 Global("messagesCache",{})
 
-local pos = 1
+local pos = 0
 
 function MessagesReceiver(args)
-    LogInfo('(' .. userMods.FromWString(args.sender) ..
-          '):(' .. userMods.FromWString(args.msg) ..
-            ') TranslatorEndMessage')
+    LogInfo('{' .. args.chatType ..
+		  '} {' .. userMods.FromWString(args.sender) ..
+		  '}:{' .. userMods.FromWString(args.msg) ..
+		  '} TranslatorEndMessage')
 end
 
 function OnSecondTimer()
     messages={}
     local filename = "C:\\ProgramData\\AOTranslator\\messages.lua"
     dofile(filename)
-	if not #message = #messagesCache then
-    -- if not isEqual(messages,messagesCache) then
+    local count = GetArrayLength(messages)
+    -- ChatLog("Messages Count: " .. tostring(count))
+    -- ChatLog("Current Pos: " .. tostring(pos))
+    if count == 0 then
+        pos = 0
+    end
+	if not (count == pos) then
+    -- if not isEqual(messages, messagesCache) then
         DrawMessage()
     end
 end
 
+function GetArrayLength(array)
+	local c = 0
+	for k,v in pairs(array) do
+		if k > c + 1 then break end
+	c = c + 1
+	end
+	return c
+end
+
+
 function DrawMessage()
+	common.UnRegisterEventHandler(OnSecondTimer, "EVENT_SECOND_TIMER")
+
     for key, value in pairs(messages) do
-        if (key > pos and value["Status"] = "Translated") then
+        if key == pos + 1 then
             -- some drawing code
-            LogInfo('NewTranslatedMessage' .. value["Sender"] ..
-                                       ':' .. value["Text"])
+            ChatLog(value["TimeStamp"] .. ' [' ..
+                    value["Sender"] .. ']: ' ..
+					value["Text"], value["ChatType"])
             -- if success drawing then
             pos = key
-			value["Status"] = "Displayed"
             table.insert(messagesCache, key, value)
         end
     end
+
+	common.RegisterEventHandler(OnSecondTimer, "EVENT_SECOND_TIMER")
 end
+
 
 --------------------------------------------------------------------------------
 --- INITIALIZATION
