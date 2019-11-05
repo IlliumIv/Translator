@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<WidgetPanel>
+	<Name>MainPanel</Name>
+	<Children>
+	<!--
+		<Item href="TextView.(WidgetTextView).xdb#xpointer(/WidgetTextView)" />
+		<Item href="Container.(WidgetScrollableContainer).xdb#xpointer(/WidgetScrollableContainer)" />
+	-->
+	</Children>
+	<BackLayer href="-.(WidgetLayerTiledTexture).xdb#xpointer(/WidgetLayerTiledTexture)" />
+	<Placement>
+		<X>
+			<Pos>400</Pos>
+			<Size>430</Size>
+		</X>
+		<Y>
+			<Pos>400</Pos>
+			<Size>460</Size>
+		</Y>
+	</Placement>
+	<Visible>false</Visible>
+	<forceWheel>true</forceWheel>
+</WidgetPanel>

@@ -46,9 +46,8 @@ namespace TranslatorHelper
         {
             OnLoad();
 
-            Console.WriteLine($"Translator: v{version}");
-            Console.WriteLine($"Last Updated: {buildDate}");
-            Console.WriteLine();
+            Console.WriteLine($"Translator: v{version}\n" +
+                              $"Last Updated: {buildDate}\n");
 
             AOgameSearcher();
             position = GetEndOfFilePosition(ModsLog);
@@ -220,6 +219,8 @@ namespace TranslatorHelper
                     File.AppendAllText(ErrorLog, DateTime.Now + $"{e.Message}\n" +
                                                  $"{e.StackTrace}\n");
                     retry++;
+
+                    Thread.Sleep(5000);
                 }
             }
 
@@ -247,7 +248,7 @@ namespace TranslatorHelper
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($">> {message.TimeStamp} [{message.Sender}]: \"{message.Text}\"");
             Console.ResetColor();
-            Console.WriteLine();
+            Console.WriteLine(">>> powered by Google Translate\n");
         }
 
         private static long GetEndOfFilePosition(string path)
