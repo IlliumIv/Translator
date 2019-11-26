@@ -329,5 +329,8 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
-MockLog.txt
+TranslatorHelper/*.txt
 TranslatorHelper/*.xml
+TranslatorHelper/*.dll
+TranslatorHelper/*.exe
+TranslatorHelper/*.exe.config
