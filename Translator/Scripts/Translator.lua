@@ -1,12 +1,23 @@
 -- Copyright 2019 IlliumIv
 -- Licensed under the Apache License, Version 2.0
 
---[[
+--[[    Example translated message:
 messages[1]={["Status"]="Translated",
 			["TimeStamp"]="00:00:00",
 			["Sender"]="Illium",
 			["Text"]="Some string whith message"}
 --]]
+
+--------------------------------------------------------------------------------
+--- VARIABLES
+--------------------------------------------------------------------------------
+Global("knownReceivers",{
+    [ "SomeNickName" ] = true,
+})
+
+local onlyKnownReceivers = true
+local sameColors = false
+--------------------------------------------------------------------------------
 
 Global("messages",{})
 Global("messagesCache",{})
@@ -14,10 +25,14 @@ Global("messagesCache",{})
 local pos = 0
 
 function MessagesReceiver(args)
+    if (onlyKnownReceivers == true) and not (Is_KnownReceiver(args.sender)) then
+        return
+    end
+
     LogInfo('{' .. args.chatType ..
-		  '} {' .. userMods.FromWString(args.sender) ..
-		  '}:{' .. userMods.FromWString(args.msg) ..
-		  '} TranslatorEndMessage')
+            '} {' .. userMods.FromWString(args.sender) ..
+            '}:{' .. userMods.FromWString(args.msg) ..
+            '} TranslatorEndMessage')
 end
 
 function OnSecondTimer()
@@ -51,9 +66,16 @@ function MessagesDisplayer()
     for key, value in pairs(messages) do
         if key == pos + 1 then
             -- some drawing code
-            ChatLog(value["TimeStamp"] .. ' [' ..
-                    value["Sender"] .. ']: ' ..
-					value["Text"], value["ChatType"])
+            local message = value["TimeStamp"] .. ' [' ..
+                            value["Sender"] .. ']: ' ..
+                            value["Text"]
+
+            if sameColors then
+                ChatLog(message, value["ChatType"])
+            else
+                ChatLog(message)
+            end
+
             -- if success drawing then
             pos = key
             table.insert(messagesCache, key, value)
@@ -63,6 +85,12 @@ function MessagesDisplayer()
 	common.RegisterEventHandler(OnSecondTimer, "EVENT_SECOND_TIMER")
 end
 
+function Is_KnownReceiver(nickname)
+    if knownReceivers[nickname] then
+        return knownReceivers[nickname]
+    end
+    return false
+end
 
 --------------------------------------------------------------------------------
 --- INITIALIZATION
