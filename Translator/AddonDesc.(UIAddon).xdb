@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UIAddon>
     <Name>Translator</Name>
-    <author>Illium</author>
-    <localizedNameFileRef href="Name.txt"/>
-    <localizedDescFileRef href="Desc.txt"/>
-
     <AutoStart>true</AutoStart>
-
     <ScriptFileRefs>
-        <Item href="Scripts/Libs/ScriptAddonBase.lua"/>
+        <Item href="Nicknames.txt"/>
         <Item href="Scripts/Libs/ScriptChatLogExt.lua"/>
         <Item href="Scripts/Libs/ScriptAdvancedToString.lua"/>
-
         <Item href="Scripts/Translator.lua"/>
     </ScriptFileRefs>
 <!--
@@ -19,8 +13,11 @@
     <Forms>
         <Item>
             <Id>Main</Id>
-            <Form href="Widgets/MainForm.(WidgetForm).xdb#xpointer(/WidgetForm)"/>
+            <Form href="Textures/MainForm.(WidgetForm).xdb#xpointer(/WidgetForm)"/>
         </Item>
     </Forms>
 -->
+    <author>Illium</author>
+    <localizedNameFileRef href="Name.txt"/>
+    <localizedDescFileRef href="Desc.txt"/>
 </UIAddon>

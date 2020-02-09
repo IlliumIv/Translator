@@ -36,9 +36,9 @@ namespace TranslatorHelper
         static long position;
         static long messagesCount = 1;
 
-        // Info: addon Translator: {08:25:39} {2} {Illium}:{Some message} TranslatorEndMessage
+        // Info: addon Translator(0): {08:25:39} {2} {Illium}:{Some message} TranslatorEndMessage
         // Translator\:.*TranslatorEndMessage
-        static readonly Regex lineCatch = new Regex(@"Translator\:.*TranslatorEndMessage");
+        static readonly Regex lineCatch = new Regex(@"Translator\(.*\)\:.*TranslatorEndMessage");
         // \{(.*?)\}
         static readonly Regex paramCatch = new Regex(@"\{(.*?)\}");
 
@@ -46,8 +46,9 @@ namespace TranslatorHelper
         {
             OnLoad();
 
-            Console.WriteLine($"Translator: v{version}\n" +
-                              $"Last Updated: {buildDate}\n");
+            Console.WriteLine($"Translator: v{version}");
+            Console.WriteLine($"Last Updated: {buildDate}");
+            Console.WriteLine();
 
             AOgameSearcher();
             position = GetEndOfFilePosition(ModsLog);
@@ -219,8 +220,6 @@ namespace TranslatorHelper
                     File.AppendAllText(ErrorLog, DateTime.Now + $"{e.Message}\n" +
                                                  $"{e.StackTrace}\n");
                     retry++;
-
-                    Thread.Sleep(5000);
                 }
             }
 
@@ -248,7 +247,7 @@ namespace TranslatorHelper
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($">> {message.TimeStamp} [{message.Sender}]: \"{message.Text}\"");
             Console.ResetColor();
-            Console.WriteLine(">>> powered by Google Translate\n");
+            Console.WriteLine();
         }
 
         private static long GetEndOfFilePosition(string path)

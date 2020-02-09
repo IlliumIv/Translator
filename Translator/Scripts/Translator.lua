@@ -1,23 +1,12 @@
 -- Copyright 2019 IlliumIv
 -- Licensed under the Apache License, Version 2.0
 
---[[    Example translated message:
+--[[
 messages[1]={["Status"]="Translated",
 			["TimeStamp"]="00:00:00",
 			["Sender"]="Illium",
 			["Text"]="Some string whith message"}
 --]]
-
---------------------------------------------------------------------------------
---- VARIABLES
---------------------------------------------------------------------------------
-Global("knownReceivers",{
-    [ "SomeNickName" ] = true,
-})
-
-local onlyKnownReceivers = true
-local sameColors = false
---------------------------------------------------------------------------------
 
 Global("messages",{})
 Global("messagesCache",{})
@@ -25,14 +14,18 @@ Global("messagesCache",{})
 local pos = 0
 
 function MessagesReceiver(args)
-    if (onlyKnownReceivers == true) and not (Is_KnownReceiver(args.sender)) then
-        return
-    end
-
-    LogInfo('{' .. args.chatType ..
-            '} {' .. userMods.FromWString(args.sender) ..
-            '}:{' .. userMods.FromWString(args.msg) ..
-            '} TranslatorEndMessage')
+	local needTranslate = nicknames[userMods.FromWString(args.sender)]
+	if needTranslate == true then
+		
+		local dt = common.GetLocalDateTime()
+		local t = string.format( "{%02d:%02d:%02d} ", dt.h, dt.min, dt.s )
+	
+		common.LogInfo('common', t ..
+			  '{' .. args.chatType ..
+			'} {' .. userMods.FromWString(args.sender) ..
+			'}:{' .. userMods.FromWString(args.msg) ..
+			'} TranslatorEndMessage')
+	end
 end
 
 function OnSecondTimer()
@@ -46,7 +39,8 @@ function OnSecondTimer()
         pos = 0
     end
 	if not (count == pos) then
-        MessagesDisplayer()
+    -- if not isEqual(messages, messagesCache) then
+        DrawMessage()
     end
 end
 
@@ -59,23 +53,17 @@ function GetArrayLength(array)
 	return c
 end
 
-
-function MessagesDisplayer()
+function DrawMessage()
 	common.UnRegisterEventHandler(OnSecondTimer, "EVENT_SECOND_TIMER")
 
     for key, value in pairs(messages) do
         if key == pos + 1 then
             -- some drawing code
-            local message = value["TimeStamp"] .. ' [' ..
-                            value["Sender"] .. ']: ' ..
-                            value["Text"]
-
-            if sameColors then
-                ChatLog(message, value["ChatType"])
-            else
-                ChatLog(message)
-            end
-
+            ChatLog(value["TimeStamp"] .. ' [' ..
+                    value["Sender"] .. ']: ' ..
+					value["Text"] -- ,
+					-- value["ChatType"]
+					)
             -- if success drawing then
             pos = key
             table.insert(messagesCache, key, value)
@@ -85,12 +73,6 @@ function MessagesDisplayer()
 	common.RegisterEventHandler(OnSecondTimer, "EVENT_SECOND_TIMER")
 end
 
-function Is_KnownReceiver(nickname)
-    if knownReceivers[nickname] then
-        return knownReceivers[nickname]
-    end
-    return false
-end
 
 --------------------------------------------------------------------------------
 --- INITIALIZATION

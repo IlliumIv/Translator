@@ -1,0 +1,4 @@
+Global( "nicknames", {
+	[ "Иллиум" ] = true,
+	[ "Some" ] = false,
+})
