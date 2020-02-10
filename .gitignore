@@ -334,3 +334,6 @@ TranslatorHelper/*.xml
 TranslatorHelper/*.dll
 TranslatorHelper/*.exe
 TranslatorHelper/*.exe.config
+
+#Lua config file
+.luacheckrc
