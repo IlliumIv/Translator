@@ -201,7 +201,7 @@ namespace TranslatorHelper
                 {
                     if (!Debug)
                     {
-                        if (!(msg.Text.Length <= 2) & !(msg.ChatType == ChatType.LogColorYellow))
+                        if (!(msg.Text.Length <= 2))
                         {
                             TranslationResult result = await translator.TranslateLiteAsync(msg.Text, from, to).ConfigureAwait(true);
                             msg.Text = result.MergedTranslation;
