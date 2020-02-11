@@ -6,6 +6,7 @@
         <Item href="Nicknames.txt"/>
         <Item href="Scripts/Libs/ScriptChatLogExt.lua"/>
         <Item href="Scripts/Libs/ScriptAdvancedToString.lua"/>
+        <Item href="Scripts/Libs/ScriptStringBuilder.lua"/>
         <Item href="Scripts/Translator.lua"/>
     </ScriptFileRefs>
 <!--
