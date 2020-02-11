@@ -9,7 +9,6 @@ messages[1]={["Status"]="Translated",
 --]]
 
 Global("messages",{})
-Global("messagesCache",{})
 
 local pos = 0
 
@@ -39,7 +38,6 @@ function OnSecondTimer()
         pos = 0
     end
 	if not (count == pos) then
-    -- if not isEqual(messages, messagesCache) then
         DrawMessage()
     end
 end
@@ -58,15 +56,12 @@ function DrawMessage()
 
     for key, value in pairs(messages) do
         if key == pos + 1 then
-            -- some drawing code
             ChatLog(value["TimeStamp"] .. ' [' ..
                     value["Sender"] .. ']: ' ..
 					value["Text"] -- ,
 					-- value["ChatType"]
 					)
-            -- if success drawing then
             pos = key
-            table.insert(messagesCache, key, value)
         end
     end
 
